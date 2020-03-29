@@ -10,14 +10,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-
-	"go.uber.org/zap"
-)
-
-var (
-	// ScdaemonSocketName is a runtime generated filepath to the WK location of the scdaemon socket descriptor.
-	ScdaemonSocketName string
-	log                zap.SugaredLogger
 )
 
 func mainRelay() {

@@ -4,8 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"os/exec"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 // ScdaemonSocketFilename is the WK filename for the scdaemon socket descriptor.
@@ -17,12 +20,16 @@ type GpgConfBinary string
 var (
 	gpgconfLinux GpgConfBinary = "gpgconf"
 	gpgconfWin   GpgConfBinary = "gpgconf.exe"
+
+	// ScdaemonSocketName is a runtime generated filepath to the WK location of the scdaemon socket descriptor.
+	ScdaemonSocketName string
+	log                *zap.SugaredLogger
+	outputSink         io.Writer
 )
 
 func init() {
-
-	log = GetLogger()
-
+	outputSink = getOutputSink()
+	log = getLogger()
 }
 
 // GetWindowsPath converts gpgconf output into a valid windows path.

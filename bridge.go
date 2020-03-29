@@ -74,7 +74,7 @@ func StartScdaemon() (*exec.Cmd, error) {
 	scdaemonBinary = GetWslPath(GetWindowsPath(scdaemonBinary))
 
 	args := []string{"--daemon"}
-	if DebugVerbose {
+	if verboseLogging {
 		args = append(args, "--debug-level", "guru")
 	}
 
