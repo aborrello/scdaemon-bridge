@@ -34,19 +34,22 @@ func mainBridge() {
 	flag.BoolVar(&flagDaemon, "daemon", false, "run in daemon mode (background)")
 	flag.Parse()
 
+	// Derive the path for the relay binary
 	gpgWinHomeDir, err := gpgconfWin.GetDirectory("homedir")
 	if err != nil {
 		log.Fatalw("Unable to get Gpg4win home directory", "error", err)
 	}
 	relayBinary := path.Join(GetWslPath(GetWindowsPath(gpgWinHomeDir)), "scdaemon-relay.exe")
 
+	// Start scdaemon in daemon mode
 	daemon, err := StartScdaemon()
 	if err != nil {
 		log.Fatalw("Failed to start scdaemon", "error", err)
 	}
 	defer daemon.Process.Signal(os.Interrupt)
 
-	if flagMultiServer || flagDaemon {
+	if flagDaemon || flagMultiServer {
+		// Start the assuan listner
 		l, nonce, err := StartAssuanListener()
 		if err != nil {
 			log.Fatalw("Unable to start assuan listener", "error", err)
@@ -60,6 +63,7 @@ func mainBridge() {
 
 }
 
+// StartScdaemon starts scdaemon in daemon mode.
 func StartScdaemon() (*exec.Cmd, error) {
 
 	scdaemonBinary, err := gpgconfWin.GetBinary("scdaemon")
@@ -79,6 +83,7 @@ func StartScdaemon() (*exec.Cmd, error) {
 
 }
 
+// StartRelay opens the relay binary on the Windows environment with the specified in, out and error channels.
 func StartRelay(relayBinary string, stdin io.Reader, stdout io.Writer, stderr io.Writer) {
 
 	cmd := exec.Command(relayBinary)
@@ -97,6 +102,8 @@ func StartRelay(relayBinary string, stdin io.Reader, stdout io.Writer, stderr io
 
 }
 
+// SocketNameMiddleware implements io.Reader and overrides GETINFO socket_name, returning the
+// bridged socket in the WSL space instead of the actual.
 type SocketNameMiddleware struct {
 	input       io.Reader
 	output      io.Writer
@@ -104,6 +111,7 @@ type SocketNameMiddleware struct {
 	overrideVal []byte
 }
 
+// NewSocketNameMiddleware creates a new SocketNameMiddleware for the provided input and output.
 func NewSocketNameMiddleware(input io.Reader, output io.Writer) SocketNameMiddleware {
 
 	return SocketNameMiddleware{
@@ -131,6 +139,7 @@ func (middleware SocketNameMiddleware) Read(p []byte) (int, error) {
 
 }
 
+// StartAssuanListener creates a new assuan listener and accompanying socket wrapper descriptor.
 func StartAssuanListener() (l net.Listener, nonce []byte, err error) {
 
 	l, err = net.Listen("tcp", "127.0.0.1:0")
@@ -168,6 +177,8 @@ func StartAssuanListener() (l net.Listener, nonce []byte, err error) {
 	return
 }
 
+// ProxyAssuanRequests accepts new assuan requests and opens new relay connections. Additionally,
+// it verifies the nonce, simulating a regular assuan server.
 func ProxyAssuanRequests(l net.Listener, nonce []byte, relayBinary string) error {
 
 	for {
