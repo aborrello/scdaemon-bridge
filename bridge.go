@@ -61,7 +61,7 @@ func mainBridge() {
 
 	if flagServer || flagMultiServer {
 		// Open a relay for stdin and stdout
-		go StartRelay(relayBinary, os.Stdin, os.Stdout, os.Stderr)
+		go StartRelay(relayBinary, os.Stdin, os.Stdout, outputSink)
 	}
 
 }
@@ -81,6 +81,8 @@ func StartScdaemon() (*exec.Cmd, error) {
 	}
 
 	cmd := exec.Command(scdaemonBinary, args...)
+	cmd.Stdout = outputSink
+	cmd.Stderr = outputSink
 	err = cmd.Start()
 	return cmd, err
 
@@ -203,7 +205,7 @@ func ProxyAssuanRequests(l net.Listener, nonce []byte, relayBinary string) error
 			continue
 		}
 
-		go StartRelay(relayBinary, conn, conn, os.Stderr)
+		go StartRelay(relayBinary, conn, conn, outputSink)
 	}
 
 }
