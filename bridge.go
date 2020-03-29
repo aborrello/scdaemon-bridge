@@ -54,11 +54,12 @@ func mainBridge() {
 		if err != nil {
 			log.Fatalw("Unable to start assuan listener", "error", err)
 		}
-		ProxyAssuanRequests(l, nonce, relayBinary)
+		go ProxyAssuanRequests(l, nonce, relayBinary)
 	}
 
 	if flagServer || flagMultiServer {
-		StartRelay(relayBinary, os.Stdin, os.Stdout, os.Stderr)
+		// Open a relay for stdin and stdout
+		go StartRelay(relayBinary, os.Stdin, os.Stdout, os.Stderr)
 	}
 
 }
