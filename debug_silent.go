@@ -2,4 +2,4 @@
 
 package main
 
-const verboseLogging bool = false
+const VerboseOutput bool = false
